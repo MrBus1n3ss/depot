@@ -1,6 +1,7 @@
 import sqlite3
-from datatime import datetime
+from datetime import datetime
 from pathlib import Path
+import hashlib
 
 
 home_dir = Path.home()
@@ -20,49 +21,63 @@ class DB:
 
 
 class DepotSystem:
-    def __init__(self, db):
+    def __init__(self, name, db):
+        self.name = name
         self.db = db
+        self.created_at = datetime.now()
+        self.cursor = self.db.get_cursor()
 
-    def create_dir(self):
-        pass
+    def create_depot(self, depot_name):
+        row = self.cursor.execute("select name, hash from depot_mapping").fetchone()
+        if row is None:
+            hash = self.create_hash()
+            self.cursor.execute("insert into depot_mapping values (?, ?)", (depot_name, hash,))
+            print(self.cursor.execute("select name, hash from depot_mapping").fetchall())
+            self.db.connection.commit()
+
+        else:
+            raise Exception(f'{depot_name} already exists')
 
     def create_hash(self):
+        hash = hashlib.sha256()
+        hash.update(bytes(self.name.encode('utf-8')))
+        hash.update(bytes(str(self.created_at).encode('utf-8')))
+        return hash.hexdigest()
+
+
+
+class Depot:
+    def __init__(self, name, created_at, db):
+        self.name = name
+        self.created_at = created_at
+        self.db = db
+
+    def store_file(self):
         pass
 
-class FileSystem(object):
-
-    def __new__(cls):
-        if not hasattr(cls, 'instance'):
-            cls.instance = super(FileSystem, cls).__new__(cls)
-        return cls.instance
-
-    def config(self, project, location):
-        self.project = project
-        self.location = location
-
-    def create_file_system(self):
-        try:
-            print(self.project)
-            print(self.location)
-        except AttributeError:
-            print('Please run config First')
-        except Exception:
-            print('Unknown Error')
-
-    def update_file_system(self, location):
+    def remove_file(self):
         pass
 
-    def get_file_system(self, location):
+    def update_file(self):
         pass
 
-    def delete_file_system(self, location):
+    def hash_file(self):
+        pass
+
+    def compress_file(self):
+        pass
+
+    def decompress_file(self):
         pass
 
 
 # TODO: going to make this more like buckets, need to make into server
 def main():
     depot_mapping = DB(data_dir, "depot_mapping.db")
-    depot = DepotSystem(depot_mapping)
+    depot_mapping.get_cursor().execute("create table if not exists depot_mapping (name text, hash text)")
+    depot_mapping.connection.commit()
+    depot_system = DepotSystem('test', depot_mapping)
+    depot_system.create_depot('test')
 
 
 if __name__ == "__main__":
