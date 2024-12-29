@@ -1,6 +1,33 @@
-import os
+import sqlite3
+from datatime import datetime
 from pathlib import Path
 
+
+home_dir = Path.home()
+data_dir = home_dir / 'data'
+
+
+class DB:
+    def __init__(self, path, db_name):
+        self.db_path = path / db_name
+        self.connection = sqlite3.connect(self.db_path)
+
+    def total_changes(self):
+        return self.connection.total_changes
+
+    def get_cursor(self):
+        return self.connection.cursor()
+
+
+class DepotSystem:
+    def __init__(self, db):
+        self.db = db
+
+    def create_dir(self):
+        pass
+
+    def create_hash(self):
+        pass
 
 class FileSystem(object):
 
@@ -32,59 +59,10 @@ class FileSystem(object):
         pass
 
 
-class Dir:
-    def __init__(self):
-        pass
-
-    def create_dir(self):
-        pass
-
-    def update_dir(self):
-        pass
-
-    def get_dir(self):
-        pass
-
-    def delete_dir(self):
-        pass
-
-
-class File:
-    def __init__(self, name: str, location: list):
-        self.name = name
-        self.location = location
-        self.project_path = Path.cwd()
-
-    def create_file(self):
-        file_dir = os.path.join(Path.cwd(), self.location)
-        print(file_dir)
-        # print(Path(self.project_path / self.location))
-        # print(Path.is_dir(self.project_path / self.location))
-        # print(self.location)
-        # print(self.project_path)
-
-    def rename_file(self, name):
-        pass
-
-    def get_file(self):
-        pass
-
-    def delete_file(self):
-        pass
-
-    def write_to_file(self, data):
-        pass
-
-
 # TODO: going to make this more like buckets, need to make into server
 def main():
-    # file_system = FileSystem()
-    # file_system.config('data', '~/test')
-    # file_system.create_file_system()
-    file = File('test', '/data')
-    new_file = File('test2', '/data/test')
-    file.create_file()
-    new_file.create_file()
+    depot_mapping = DB(data_dir, "depot_mapping.db")
+    depot = DepotSystem(depot_mapping)
 
 
 if __name__ == "__main__":
