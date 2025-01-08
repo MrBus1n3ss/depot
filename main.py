@@ -89,12 +89,12 @@ class Depot:
         self.modify_at = now
         self.modify_by = modify_by
 
-    def create_dir(self, db, dir_name, parent_dir='root'):  # TODO: figure out how I want to do the db part
+    def create_dir(self, db, dir_name, parent_dir=['root']):  # TODO: figure out how I want to do the db part
         cursor = db.get_cursor()
         # TODO: validate dir name
         cursor.execute("insert into dirs values(?, ?, ?, ?, ?, ?, ?)",
                        (dir_name,
-                        parent_dir,
+                        repr(parent_dir),
                         self.name,
                         self.created_at,
                         self.created_by,
@@ -102,8 +102,22 @@ class Depot:
                         self.modify_by))
         db.connection.commit()
 
-    def get_dir_tree(self):
-        pass
+    # TODO: might need to find a better way of saving the dirs, otherwise going to be a mess to figure out parent dirs
+    def get_dir_tree(self, db):
+        tree = {}
+        cursor = db.get_cursor()
+        rows = cursor.execute("select dir_name, parent_dir from dirs where depot_name = ?",
+                              (self.name,)).fetchall()
+        for row in rows:
+            dir_name = row[0]
+            parent_dir = eval(row[1])
+            if not (parent_dir in tree.keys()):
+                tree[parent_dir] = []
+            tree[parent_dir].append(dir_name)
+        for key, value in tree.items():
+            for dir in value:
+                print(dir)
+                
 
     def get_dirs(self, db):
         cursor = db.get_cursor()
@@ -112,8 +126,12 @@ class Depot:
         return rows
 
 
-    def get_dir(self):
-        pass
+    def get_dir(self, dir_name, db):
+        cursor = db.get_cursor()
+        row = cursor.execute("select * from dirs where depot_name = ? and dir_name = ?",
+                             (self.name, dir_name)).fetchone()
+        print(type(eval(row[1])), eval(row[1]))
+        return row
 
     def store_file(self):
         pass
@@ -137,6 +155,7 @@ class Depot:
 def filename_parser(filename):
     return filename.split(':')
 
+
 # These are for testing ========================================================
 def create_test_dir(depot_mapping, depot):
     depot.create_dir(depot_mapping, 'test_dir')
@@ -144,7 +163,8 @@ def create_test_dir(depot_mapping, depot):
 
 def create_parent_dir(depot_mapping, depot):
     depot.create_dir(depot_mapping, 'parent_dir')
-    depot.create_dir(depot_mapping, 'child_dir', 'parent_dir')
+    depot.create_dir(depot_mapping, 'child_dir', ['root', 'parent_dir'])
+    depot.create_dir(depot_mapping, 'new_child', ['root', 'parent_dir', 'child_dir'])
 
 
 def create_test_depot(depots):
@@ -167,11 +187,11 @@ def get_test_depot(depots):
 # TODO: going to make this more like buckets, need to make into server
 def main():
     depots, depot_mapping = get_depots()
-    create_test_depot(depots)
+    # create_test_depot(depots)
     depot = get_test_depot(depots)
-    create_test_dir(depot_mapping, depot)
-    create_parent_dir(depot_mapping, depot)
-    print(depot.get_dirs(depot_mapping))
+    # create_test_dir(depot_mapping, depot)
+    # create_parent_dir(depot_mapping, depot)
+    print(depot.get_dir('new_child', depot_mapping))
 
 
 if __name__ == "__main__":
