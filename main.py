@@ -1,7 +1,6 @@
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-import hashlib
 
 
 home_dir = Path.home()
@@ -109,15 +108,9 @@ class Depot:
         rows = cursor.execute("select dir_name, parent_dir from dirs where depot_name = ?",
                               (self.name,)).fetchall()
         for row in rows:
-            dir_name = row[0]
-            parent_dir = eval(row[1])
-            if not (parent_dir in tree.keys()):
-                tree[parent_dir] = []
-            tree[parent_dir].append(dir_name)
-        for key, value in tree.items():
-            for dir in value:
-                print(dir)
-                
+            dir_list = eval(row[1])
+            for i in range(0, len(dir_list), -1):
+                print(dir_list[i])
 
     def get_dirs(self, db):
         cursor = db.get_cursor()
@@ -125,12 +118,12 @@ class Depot:
                               (self.name,)).fetchall()
         return rows
 
-
     def get_dir(self, dir_name, db):
         cursor = db.get_cursor()
-        row = cursor.execute("select * from dirs where depot_name = ? and dir_name = ?",
+        row = cursor.execute("""select * from dirs
+                                where depot_name = ? and
+                                dir_name = ?""",
                              (self.name, dir_name)).fetchone()
-        print(type(eval(row[1])), eval(row[1]))
         return row
 
     def store_file(self):
@@ -191,7 +184,10 @@ def main():
     depot = get_test_depot(depots)
     # create_test_dir(depot_mapping, depot)
     # create_parent_dir(depot_mapping, depot)
-    print(depot.get_dir('new_child', depot_mapping))
+    # print(depot.get_dir('new_child', depot_mapping))
+    # print(depot.get_dir('child_dir', depot_mapping))
+    from pprint import pprint as pp
+    pp(depot.get_dir_tree(depot_mapping))
 
 
 if __name__ == "__main__":
